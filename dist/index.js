@@ -42,7 +42,7 @@ class Actions {
         return this.octo.stateIsSuccess().pipe(operators_1.switchMap(success => rxjs_1.iif(() => success, this.octo.latestTagExists())), operators_1.switchMap(latestTagExists => rxjs_1.iif(() => latestTagExists, this.deleteTag(repo))), operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.createTag(repo, sha))));
     }
     deleteTag(repo) {
-        return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: octokit_1.latestTagRef }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
+        return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}` }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
     }
     createTag(repo, sha) {
         return rxjs_1.from(this.octo.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref: octokit_1.latestTagRef, sha }))).pipe(operators_1.tap(() => {
@@ -145,7 +145,17 @@ class Octokit {
     }
     latestTagExists() {
         const { repo } = github_1.context;
-        return rxjs_1.from(this.octokit.repos.listTags(Object.assign(Object.assign({}, repo), { per_page: 100 }))).pipe(operators_1.map(resp => !!resp.data.find(tag => tag.name === exports.latestTagRef)));
+        return rxjs_1.from(this.octokit.repos.listTags(Object.assign(Object.assign({}, repo), { per_page: 100 }))).pipe(operators_1.map(resp => !!resp.data.find(tag => {
+            core.debug(`Tag ${tag.name} seen`);
+            return tag.name === exports.latestTagRef;
+        })), operators_1.tap(found => {
+            if (found) {
+                core.debug(`Found tag latest!`);
+            }
+            else {
+                core.debug(`Couldn't find tag latest.`);
+            }
+        }));
     }
     stateIsSuccess() {
         const { repo, sha } = github_1.context;
