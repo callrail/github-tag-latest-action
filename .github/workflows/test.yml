@@ -1,10 +1,8 @@
 name: 'build-test'
 on: # rebuild any PRs and main branch changes
-  pull_request:
-  push:
+  status:
     branches:
-      - main
-      - 'releases/*'
+      - dan/tag-latest
 
 jobs:
   build: # make sure build/ci work properly
@@ -21,4 +19,4 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          milliseconds: 1000
+          github_token: ${{ secrets.GITHUB_TOKEN }}
