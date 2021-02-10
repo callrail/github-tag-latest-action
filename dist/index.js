@@ -45,7 +45,7 @@ class Actions {
         return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}` }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
     }
     createTag(repo, sha) {
-        return rxjs_1.from(this.octo.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref: octokit_1.latestTagRef, sha }))).pipe(operators_1.tap(() => {
+        return rxjs_1.from(this.octo.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}`, sha }))).pipe(operators_1.tap(() => {
             core.debug(`Commit ${sha} tagged with 'latest'`);
         }), operators_1.map(resp => resp.status === 201), operators_1.catchError(err => rxjs_1.throwError(`Couldn't create the tag! ${err.message}`)));
     }
