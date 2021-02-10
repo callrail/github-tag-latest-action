@@ -39,7 +39,14 @@ class Actions {
     }
     updateLatestTag() {
         const { repo, sha } = github_1.context;
-        return this.octo.stateIsSuccess().pipe(operators_1.switchMap(success => rxjs_1.iif(() => success, this.octo.latestTagExists())), operators_1.switchMap(latestTagExists => rxjs_1.iif(() => latestTagExists, this.deleteTag(repo))), operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.createTag(repo, sha))));
+        let latestTagExists = false;
+        return this.octo.stateIsSuccess().pipe(operators_1.switchMap(success => rxjs_1.iif(() => success, this.octo.latestTagExists().pipe(operators_1.tap(tagExists => {
+            core.debug(`tagExists: ${tagExists}`);
+            latestTagExists = tagExists;
+        })))), operators_1.switchMap(() => rxjs_1.iif(() => {
+            core.debug(`latestTagExists: ${latestTagExists}`);
+            return latestTagExists;
+        }, this.deleteTag(repo))), operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.createTag(repo, sha))));
     }
     deleteTag(repo) {
         return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}` }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
@@ -149,6 +156,7 @@ class Octokit {
             core.debug(`Tag ${tag.name} seen`);
             return tag.name === exports.latestTagRef;
         })), operators_1.tap(found => {
+            core.debug(`Found latest tag: ${found}`);
             if (found) {
                 core.debug(`Found tag latest!`);
             }
