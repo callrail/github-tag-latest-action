@@ -26,6 +26,7 @@ export class Octokit {
           })
       ),
       tap(found => {
+        core.debug(`Found latest tag: ${found}`)
         if (found) {
           core.debug(`Found tag latest!`)
         } else {

@@ -19,7 +19,7 @@ describe('Actions', () => {
         }
       },
       stateIsSuccess: jest.fn(),
-      latestTagExists: jest.fn()
+      latestTagExists: jest.fn(() => of(true))
     }
     action = new Actions(octoMock)
   })

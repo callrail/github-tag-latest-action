@@ -9,10 +9,24 @@ export class Actions {
 
   updateLatestTag(): Observable<boolean> {
     const {repo, sha} = context
+    let latestTagExists = false
     return this.octo.stateIsSuccess().pipe(
-      switchMap(success => iif(() => success, this.octo.latestTagExists())),
-      switchMap(latestTagExists =>
-        iif(() => latestTagExists, this.deleteTag(repo))
+      switchMap(success =>
+        iif(
+          () => success,
+          this.octo.latestTagExists().pipe(
+            tap(tagExists => {
+              core.debug(`tagExists: ${tagExists}`)
+              latestTagExists = tagExists
+            })
+          )
+        )
+      ),
+      switchMap(() =>
+        iif(() => {
+          core.debug(`latestTagExists: ${latestTagExists}`)
+          return latestTagExists
+        }, this.deleteTag(repo))
       ),
       switchMap(deleteSuccess =>
         iif(() => deleteSuccess, this.createTag(repo, sha))
