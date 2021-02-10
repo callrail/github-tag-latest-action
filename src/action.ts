@@ -41,7 +41,7 @@ export class Actions {
     return from(
       this.octo.octokit.git.createRef({
         ...repo,
-        ref: latestTagRef,
+        ref: `tags/${latestTagRef}`,
         sha
       })
     ).pipe(
