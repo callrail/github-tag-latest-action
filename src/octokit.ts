@@ -17,7 +17,22 @@ export class Octokit {
         ...repo,
         per_page: 100
       })
-    ).pipe(map(resp => !!resp.data.find(tag => tag.name === latestTagRef)))
+    ).pipe(
+      map(
+        resp =>
+          !!resp.data.find(tag => {
+            core.debug(`Tag ${tag.name} seen`)
+            return tag.name === latestTagRef
+          })
+      ),
+      tap(found => {
+        if (found) {
+          core.debug(`Found tag latest!`)
+        } else {
+          core.debug(`Couldn't find tag latest.`)
+        }
+      })
+    )
   }
 
   stateIsSuccess(): Observable<boolean> {

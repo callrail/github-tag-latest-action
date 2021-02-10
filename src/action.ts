@@ -24,7 +24,7 @@ export class Actions {
     return from(
       this.octo.octokit.git.deleteRef({
         ...repo,
-        ref: latestTagRef
+        ref: `tags/${latestTagRef}`
       })
     ).pipe(
       map(resp => resp.status === 204),
