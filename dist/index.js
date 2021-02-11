@@ -75,10 +75,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const action_1 = __nccwpck_require__(9139);
+const octokit_1 = __nccwpck_require__(3258);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            return new action_1.Actions().updateLatestTag().toPromise();
+            const wrapper = new octokit_1.Octokit();
+            const success = yield wrapper.stateIsSuccess().toPromise();
+            if (success) {
+                core.debug('State for status is success!');
+                return new action_1.Actions().updateLatestTag().toPromise();
+            }
+            core.debug('State was not success yet');
         }
         catch (error) {
             core.setFailed(error.message);
