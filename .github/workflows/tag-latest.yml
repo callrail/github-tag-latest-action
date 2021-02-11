@@ -1,13 +1,14 @@
 name: 'tag-latest'
 on:
-  status:
+  status
 
 jobs:
   tag_latest:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./dist
+      - uses: ./
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           latest_tag_name: 'stable'
