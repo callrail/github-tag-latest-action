@@ -48,12 +48,12 @@ class Actions {
         }), operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.createTag(repo, sha))));
     }
     deleteTag(repo) {
-        const latestTag = `refs/tags/${octokit_1.latestTagRef}`;
+        const latestTag = `tags/${octokit_1.latestTagRef}`;
         core.debug(`Attempting to delete tag ${latestTag}`);
         return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}` }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
     }
     createTag(repo, sha) {
-        const ref = `tags/${octokit_1.latestTagRef}`;
+        const ref = `refs/tags/${octokit_1.latestTagRef}`;
         core.debug(`Attempting to create ref ${ref} for sha ${sha}`);
         return rxjs_1.from(this.octo.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref,
             sha }))).pipe(operators_1.tap(() => {
