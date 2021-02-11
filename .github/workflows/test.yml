@@ -1,6 +1,6 @@
 name: 'build-test'
 on: # rebuild any PRs and main branch changes
-  pull_request:
+  status:
 
 jobs:
   build: # make sure build/ci work properly
@@ -11,3 +11,11 @@ jobs:
           npm install
       - run: |
           npm run all
+  tag_latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./dist
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          latest_tag_name: 'stable'
