@@ -3,32 +3,12 @@ require('./sourcemap-register.js');module.exports =
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 9139:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Actions = void 0;
-const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const rxjs_1 = __nccwpck_require__(5805);
 const operators_1 = __nccwpck_require__(7801);
@@ -39,26 +19,19 @@ class Actions {
     }
     updateLatestTag() {
         const { repo, sha } = github_1.context;
-        return this.octo.stateIsSuccess().pipe(operators_1.switchMap(success => rxjs_1.iif(() => success, this.octo.latestTagExists())), operators_1.switchMap(latestExists => {
-            core.debug(`latestExists: ${latestExists}`);
+        // first check if the commit's status state is success
+        return this.octo.stateIsSuccess().pipe(
+        // if it is, then check if the latest tag exists
+        operators_1.switchMap(success => rxjs_1.iif(() => success, this.octo.latestTagExists())), 
+        // if the latest tag exists, delete it
+        operators_1.switchMap(latestExists => {
             if (latestExists) {
-                return this.deleteTag(repo);
+                return this.octo.deleteTag();
             }
             return rxjs_1.of(true);
-        }), operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.createTag(repo, sha))));
-    }
-    deleteTag(repo) {
-        const latestTag = `tags/${octokit_1.latestTagRef}`;
-        core.debug(`Attempting to delete tag ${latestTag}`);
-        return rxjs_1.from(this.octo.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref: `tags/${octokit_1.latestTagRef}` }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`)));
-    }
-    createTag(repo, sha) {
-        const ref = `refs/tags/${octokit_1.latestTagRef}`;
-        core.debug(`Attempting to create ref ${ref} for sha ${sha}`);
-        return rxjs_1.from(this.octo.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref,
-            sha }))).pipe(operators_1.tap(() => {
-            core.debug(`Commit ${sha} tagged with 'latest'`);
-        }), operators_1.map(resp => resp.status === 201), operators_1.catchError(err => rxjs_1.throwError(`Couldn't create the tag! ${err.message}`)));
+        }), 
+        // and finally, if the delete (if any) was successful, create the latest tag
+        operators_1.switchMap(deleteSuccess => rxjs_1.iif(() => deleteSuccess, this.octo.createTag(repo, sha))));
     }
 }
 exports.Actions = Actions;
@@ -142,30 +115,26 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Octokit = exports.octo = exports.latestTagRef = void 0;
+exports.Octokit = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const rxjs_1 = __nccwpck_require__(5805);
 const operators_1 = __nccwpck_require__(7801);
-exports.latestTagRef = 'latest';
 const token = core.getInput('github_token');
-exports.octo = github_1.getOctokit(token);
+const octo = github_1.getOctokit(token);
 class Octokit {
-    constructor(octokit = exports.octo) {
+    constructor(octokit = octo) {
         this.octokit = octokit;
+        this.latestTagName = core.getInput('latest_tag_name') || 'latest';
     }
     latestTagExists() {
         const { repo } = github_1.context;
-        return rxjs_1.from(this.octokit.repos.listTags(Object.assign(Object.assign({}, repo), { per_page: 100 }))).pipe(operators_1.map(resp => !!resp.data.find(tag => {
-            core.debug(`Tag ${tag.name} seen`);
-            return tag.name === exports.latestTagRef;
-        })), operators_1.tap(found => {
-            core.debug(`Found latest tag: ${found}`);
+        return rxjs_1.from(this.octokit.repos.listTags(Object.assign(Object.assign({}, repo), { per_page: 100 }))).pipe(operators_1.map(resp => !!resp.data.find(tag => tag.name === this.latestTagName)), operators_1.tap(found => {
             if (found) {
-                core.debug(`Found tag latest!`);
+                core.debug(`Found tag ${this.latestTagName}!`);
             }
             else {
-                core.debug(`Couldn't find tag latest.`);
+                core.debug(`Couldn't find tag ${this.latestTagName}.`);
             }
         }));
     }
@@ -174,6 +143,26 @@ class Octokit {
         return rxjs_1.from(this.octokit.repos.getCombinedStatusForRef(Object.assign(Object.assign({}, repo), { ref: sha }))).pipe(operators_1.tap(({ data: combinedStatus }) => {
             core.debug(`Status state for sha ${sha} is ${combinedStatus.state}.`);
         }), operators_1.map(({ data: combinedStatus }) => combinedStatus.state === 'success'));
+    }
+    deleteTag() {
+        const { repo } = github_1.context;
+        const ref = `tags/${this.latestTagName}`;
+        core.debug(`Attempting to delete tag ${ref}`);
+        return rxjs_1.from(this.octokit.git.deleteRef(Object.assign(Object.assign({}, repo), { ref }))).pipe(operators_1.map(resp => resp.status === 204), operators_1.catchError(err => {
+            core.setFailed(`Something went wrong removing the tag! ${err.message}`);
+            return rxjs_1.throwError(`Something went wrong removing the tag! ${err.message}`);
+        }));
+    }
+    createTag(repo, sha) {
+        const ref = `refs/tags/${this.latestTagName}`;
+        core.debug(`Attempting to create ref ${ref} for sha ${sha}`);
+        return rxjs_1.from(this.octokit.git.createRef(Object.assign(Object.assign({}, repo), { ref,
+            sha }))).pipe(operators_1.tap(() => {
+            core.debug(`Commit ${sha} tagged with '${this.latestTagName}'`);
+        }), operators_1.map(resp => resp.status === 201), operators_1.catchError(err => {
+            core.setFailed(`Couldn't create the tag! ${err.message}`);
+            return rxjs_1.throwError(`Couldn't create the tag! ${err.message}`);
+        }));
     }
 }
 exports.Octokit = Octokit;
