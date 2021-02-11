@@ -6,6 +6,10 @@ inputs:
     required: true
     description: 'GH token'
     default: ''
+  latest_tag_name:
+    required: false
+    description: 'Tag name to find/delete/create'
+    default: 'latest'
 runs:
   using: 'node12'
   main: 'dist/index.js'
