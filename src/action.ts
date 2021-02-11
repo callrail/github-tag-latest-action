@@ -25,7 +25,7 @@ export class Actions {
   }
 
   private deleteTag(repo: {owner: string; repo: string}): Observable<boolean> {
-    const latestTag = `refs/tags/${latestTagRef}`
+    const latestTag = `tags/${latestTagRef}`
     core.debug(`Attempting to delete tag ${latestTag}`)
     return from(
       this.octo.octokit.git.deleteRef({
@@ -44,7 +44,7 @@ export class Actions {
     repo: {owner: string; repo: string},
     sha: string
   ): Observable<boolean> {
-    const ref = `tags/${latestTagRef}`
+    const ref = `refs/tags/${latestTagRef}`
     core.debug(`Attempting to create ref ${ref} for sha ${sha}`)
     return from(
       this.octo.octokit.git.createRef({
