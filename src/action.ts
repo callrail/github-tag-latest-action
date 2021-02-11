@@ -1,63 +1,28 @@
-import * as core from '@actions/core'
 import {context} from '@actions/github'
-import {from, iif, Observable, of, throwError} from 'rxjs'
-import {catchError, map, switchMap, tap} from 'rxjs/operators'
-import {latestTagRef, Octokit} from './octokit'
+import {iif, Observable, of} from 'rxjs'
+import {switchMap} from 'rxjs/operators'
+import {Octokit} from './octokit'
 
 export class Actions {
   constructor(private octo = new Octokit()) {}
 
   updateLatestTag(): Observable<boolean> {
     const {repo, sha} = context
+    // first check if the commit's status state is success
     return this.octo.stateIsSuccess().pipe(
+      // if it is, then check if the latest tag exists
       switchMap(success => iif(() => success, this.octo.latestTagExists())),
+      // if the latest tag exists, delete it
       switchMap(latestExists => {
-        core.debug(`latestExists: ${latestExists}`)
         if (latestExists) {
-          return this.deleteTag(repo)
+          return this.octo.deleteTag()
         }
         return of(true)
       }),
+      // and finally, if the delete (if any) was successful, create the latest tag
       switchMap(deleteSuccess =>
-        iif(() => deleteSuccess, this.createTag(repo, sha))
+        iif(() => deleteSuccess, this.octo.createTag(repo, sha))
       )
-    )
-  }
-
-  private deleteTag(repo: {owner: string; repo: string}): Observable<boolean> {
-    const latestTag = `tags/${latestTagRef}`
-    core.debug(`Attempting to delete tag ${latestTag}`)
-    return from(
-      this.octo.octokit.git.deleteRef({
-        ...repo,
-        ref: `tags/${latestTagRef}`
-      })
-    ).pipe(
-      map(resp => resp.status === 204),
-      catchError(err =>
-        throwError(`Something went wrong removing the tag! ${err.message}`)
-      )
-    )
-  }
-
-  private createTag(
-    repo: {owner: string; repo: string},
-    sha: string
-  ): Observable<boolean> {
-    const ref = `refs/tags/${latestTagRef}`
-    core.debug(`Attempting to create ref ${ref} for sha ${sha}`)
-    return from(
-      this.octo.octokit.git.createRef({
-        ...repo,
-        ref,
-        sha
-      })
-    ).pipe(
-      tap(() => {
-        core.debug(`Commit ${sha} tagged with 'latest'`)
-      }),
-      map(resp => resp.status === 201),
-      catchError(err => throwError(`Couldn't create the tag! ${err.message}`))
     )
   }
 }

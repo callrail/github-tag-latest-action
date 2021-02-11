@@ -12,12 +12,8 @@ describe('Actions', () => {
 
   beforeEach(() => {
     octoMock = {
-      octokit: {
-        git: {
-          deleteRef: jest.fn(() => Promise.resolve({status: 204})),
-          createRef: jest.fn(() => Promise.resolve({status: 201}))
-        }
-      },
+      deleteTag: jest.fn(() => of(true)),
+      createTag: jest.fn(() => of(true)),
       stateIsSuccess: jest.fn(),
       latestTagExists: jest.fn(() => of(true))
     }
@@ -41,8 +37,8 @@ describe('Actions', () => {
         it('deletes the latest tag', () => {
           action.updateLatestTag().subscribe(success => {
             expect(success).toBe(true)
-            expect(octoMock.octokit.git.deleteRef).toHaveBeenCalled()
-            expect(octoMock.octokit.git.createRef).toHaveBeenCalled()
+            expect(octoMock.deleteTag).toHaveBeenCalled()
+            expect(octoMock.createTag).toHaveBeenCalled()
           })
         })
       })
@@ -56,8 +52,8 @@ describe('Actions', () => {
         it('does not call deleteRef', () => {
           action.updateLatestTag().subscribe(success => {
             expect(success).toBe(true)
-            expect(octoMock.octokit.git.deleteRef).not.toHaveBeenCalled()
-            expect(octoMock.octokit.git.createRef).toHaveBeenCalled()
+            expect(octoMock.deleteTag).not.toHaveBeenCalled()
+            expect(octoMock.createTag).toHaveBeenCalled()
           })
         })
       })
@@ -73,8 +69,8 @@ describe('Actions', () => {
       it('returns false', () => {
         action.updateLatestTag().subscribe(result => {
           expect(result).toBe(false)
-          expect(octoMock.octokit.git.deleteRef).not.toHaveBeenCalled()
-          expect(octoMock.octokit.git.createRef).not.toHaveBeenCalled()
+          expect(octoMock.deleteTag).not.toHaveBeenCalled()
+          expect(octoMock.createTag).not.toHaveBeenCalled()
         })
       })
     })
