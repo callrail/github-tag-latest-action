@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import {context} from '@actions/github'
-import {from, iif, Observable, throwError} from 'rxjs'
+import {from, iif, Observable, of, throwError} from 'rxjs'
 import {catchError, map, switchMap, tap} from 'rxjs/operators'
 import {latestTagRef, Octokit} from './octokit'
 
@@ -9,25 +9,15 @@ export class Actions {
 
   updateLatestTag(): Observable<boolean> {
     const {repo, sha} = context
-    let latestTagExists = false
     return this.octo.stateIsSuccess().pipe(
-      switchMap(success =>
-        iif(
-          () => success,
-          this.octo.latestTagExists().pipe(
-            tap(tagExists => {
-              core.debug(`tagExists: ${tagExists}`)
-              latestTagExists = tagExists
-            })
-          )
-        )
-      ),
-      switchMap(() =>
-        iif(() => {
-          core.debug(`latestTagExists: ${latestTagExists}`)
-          return latestTagExists
-        }, this.deleteTag(repo))
-      ),
+      switchMap(success => iif(() => success, this.octo.latestTagExists())),
+      switchMap(latestExists => {
+        core.debug(`latestExists: ${latestExists}`)
+        if (latestExists) {
+          return this.deleteTag(repo)
+        }
+        return of(true)
+      }),
       switchMap(deleteSuccess =>
         iif(() => deleteSuccess, this.createTag(repo, sha))
       )
