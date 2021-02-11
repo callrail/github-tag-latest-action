@@ -1,0 +1,13 @@
+name: 'tag-latest'
+on:
+  status:
+
+jobs:
+  tag_latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./dist
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          latest_tag_name: 'stable'
