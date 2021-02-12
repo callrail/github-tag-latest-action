@@ -3,7 +3,8 @@ on:
   status
 
 jobs:
-  tag_latest:
+  build:
+    name: 'Tag stable'
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
